@@ -4,6 +4,7 @@
 #include "stdlib.h"
 #include <stdio.h>
 #include <math.h>
+#include <typeinfo>
 
 using namespace std;
 
@@ -37,49 +38,51 @@ Experiment::~Experiment() {
 	MPI_Finalize();
 }
 
+// overload with different types
+
+
 void Experiment::MessageExchangeSend() {
 	MPI_Status status1, status2;
 	// buffer sizes are not OK
-	int* buffer1 = new int[messageSize];
-	int* buffer2 = new int[messageSize];
+	int* buffer1 = (int*)(malloc(messageSize));
+	int* buffer2 = (int*)(malloc(messageSize));
 	int passes = 0;
 	while (passes < passNumber) {
 		if (procRank == 0) {
 			for (int i = 0; i < messageSize; i++) buffer1[i] = i;
 			for (int i = 0; i < messageSize; i++) buffer2[i] = -i;
 			passes++;
-			MPI_Recv(buffer2, messageSize, MPI_BYTE, 1, 0, MPI_COMM_WORLD, &status1);
-			MPI_Send(buffer1, messageSize, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
+			MPI_Recv(&buffer2, messageSize, MPI_INT, 1, 0, MPI_COMM_WORLD, &status1);
+			MPI_Send(&buffer1, messageSize, MPI_INT, 1, 1, MPI_COMM_WORLD);
 		}
 		else if (procRank == 1) {
 			for (int i = 0; i < messageSize; i++) buffer2[i] = i;
 			for (int i = 0; i < messageSize; i++) buffer1[i] = -i;
-			MPI_Send(buffer1, messageSize, MPI_BYTE, 0, 0, MPI_COMM_WORLD);
-			MPI_Recv(buffer2, messageSize, MPI_BYTE, 0, 1, MPI_COMM_WORLD, &status2);
+			MPI_Send(&buffer1, messageSize, MPI_INT, 0, 0, MPI_COMM_WORLD);
+			MPI_Recv(&buffer2, messageSize, MPI_INT, 0, 1, MPI_COMM_WORLD, &status2);
 		}
 	}
-	cout << " ViuViu ";
 }
 
 void Experiment::MessageExchangeSsend() {
 	MPI_Status status1, status2;
 	// buffer sizes are not OK
-	int* buffer1 = new int[messageSize];
-	int* buffer2 = new int[messageSize];
+	int* buffer1 = (int*)(malloc(messageSize));
+	int* buffer2 = (int*)(malloc(messageSize));
 	int passes = 0;
 	while (passes < passNumber) {
 		if (procRank == 0) {
 			for (int i = 0; i < messageSize; i++) buffer1[i] = i;
 			for (int i = 0; i < messageSize; i++) buffer2[i] = -i;
 			passes++;
-			MPI_Recv(buffer2, messageSize, MPI_BYTE, 1, 0, MPI_COMM_WORLD, &status1);
-			MPI_Ssend(buffer1, messageSize, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
+			MPI_Recv(&buffer2, messageSize, MPI_INT, 1, 0, MPI_COMM_WORLD, &status1);
+			MPI_Ssend(&buffer1, messageSize, MPI_INT, 1, 1, MPI_COMM_WORLD);
 		}
 		else if (procRank == 1) {
 			for (int i = 0; i < messageSize; i++) buffer2[i] = i;
 			for (int i = 0; i < messageSize; i++) buffer1[i] = -i;
-			MPI_Ssend(buffer1, messageSize, MPI_BYTE, 0, 0, MPI_COMM_WORLD);
-			MPI_Recv(buffer2, messageSize, MPI_BYTE, 0, 1, MPI_COMM_WORLD, &status2);
+			MPI_Ssend(&buffer1, messageSize, MPI_INT, 0, 0, MPI_COMM_WORLD);
+			MPI_Recv(&buffer2, messageSize, MPI_INT, 0, 1, MPI_COMM_WORLD, &status2);
 		}
 	}
 }
@@ -88,22 +91,22 @@ void Experiment::MessageExchangeSsend() {
 void Experiment::MessageExchangeBsend() {
 	MPI_Status status1, status2;
 	// buffer sizes are not OK
-	int* buffer1 = new int[messageSize];
-	int* buffer2 = new int[messageSize];
+	int* buffer1 = (int*)(malloc(messageSize));
+	int* buffer2 = (int*)(malloc(messageSize));
 	int passes = 0;
 	while (passes < passNumber) {
 		if (procRank == 0) {
 			for (int i = 0; i < messageSize; i++) buffer1[i] = i;
 			for (int i = 0; i < messageSize; i++) buffer2[i] = -i;
 			passes++;
-			MPI_Recv(buffer2, messageSize, MPI_BYTE, 1, 0, MPI_COMM_WORLD, &status1);
-			MPI_Bsend(buffer1, messageSize, MPI_BYTE, 1, 1, MPI_COMM_WORLD);
+			MPI_Recv(&buffer2, messageSize, MPI_INT, 1, 0, MPI_COMM_WORLD, &status1);
+			MPI_Bsend(&buffer1, messageSize, MPI_INT, 1, 1, MPI_COMM_WORLD);
 		}
 		else if (procRank == 1) {
 			for (int i = 0; i < messageSize; i++) buffer2[i] = i;
 			for (int i = 0; i < messageSize; i++) buffer1[i] = -i;
-			MPI_Bsend(buffer1, messageSize, MPI_BYTE, 0, 0, MPI_COMM_WORLD);
-			MPI_Recv(buffer2, messageSize, MPI_BYTE, 0, 1, MPI_COMM_WORLD, &status2);
+			MPI_Bsend(&buffer1, messageSize, MPI_INT, 0, 0, MPI_COMM_WORLD);
+			MPI_Recv(&buffer2, messageSize, MPI_INT, 0, 1, MPI_COMM_WORLD, &status2);
 		}
 	}
 }
@@ -113,7 +116,7 @@ typedef void(Experiment::*IntMethodWithNoParameter) ();
 int main(int argc, char* argv[]) {
 	double t1, t2;
 	int messageSize = 1;
-	int numOfPasses = 2;
+	int numOfPasses = 1;
 	MPI_Init(&argc, &argv);
 	Experiment exper = Experiment(messageSize, numOfPasses);
 	
@@ -127,6 +130,7 @@ int main(int argc, char* argv[]) {
 
 	// evaluating the dependence between 
 	// message size and execution time
+
 
 	for (int messageSize = 1; messageSize < 3; messageSize++) {
 		for (int i = 0; i < 2; i++) {
