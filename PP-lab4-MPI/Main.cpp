@@ -28,8 +28,6 @@ public:
 
 Experiment::Experiment(int messageSize, int passNumber)
 	:messageSize(messageSize), passNumber(passNumber){
-	procNum = 2;
-	procRank = 0;
 	MPI_Comm_size(MPI_COMM_WORLD, &procNum);
 	MPI_Comm_rank(MPI_COMM_WORLD, &procRank);
 }
@@ -38,30 +36,25 @@ Experiment::~Experiment() {
 	MPI_Finalize();
 }
 
-// overload with different types
-
-
 void Experiment::MessageExchangeSend() {
-	MPI_Status status1, status2;
-	// buffer sizes are not OK
+	MPI_Status status;
 	int* buffer1 = (int*)(malloc(messageSize));
 	int* buffer2 = (int*)(malloc(messageSize));
 	int passes = 0;
 	while (passes < passNumber) {
 		if (procRank == 0) {
-			for (int i = 0; i < messageSize; i++) buffer1[i] = i;
-			for (int i = 0; i < messageSize; i++) buffer2[i] = -i;
+			for (int i = 0; i < messageSize; i++) buffer2[i] = i;
 			passes++;
-			MPI_Recv(&buffer2, messageSize, MPI_INT, 1, 0, MPI_COMM_WORLD, &status1);
-			MPI_Send(&buffer1, messageSize, MPI_INT, 1, 1, MPI_COMM_WORLD);
+			MPI_Recv(&buffer1, messageSize, MPI_INT, 1, 0, MPI_COMM_WORLD, &status);
+			MPI_Send(&buffer2, messageSize, MPI_INT, 1, 1, MPI_COMM_WORLD);
 		}
 		else if (procRank == 1) {
-			for (int i = 0; i < messageSize; i++) buffer2[i] = i;
-			for (int i = 0; i < messageSize; i++) buffer1[i] = -i;
+			for (int i = 0; i < messageSize; i++) buffer1[i] = i;
 			MPI_Send(&buffer1, messageSize, MPI_INT, 0, 0, MPI_COMM_WORLD);
-			MPI_Recv(&buffer2, messageSize, MPI_INT, 0, 1, MPI_COMM_WORLD, &status2);
+			MPI_Recv(&buffer2, messageSize, MPI_INT, 0, 1, MPI_COMM_WORLD, &status);
 		}
 	}
+	cout << "Out of send" << endl;
 }
 
 void Experiment::MessageExchangeSsend() {
@@ -116,7 +109,7 @@ typedef void(Experiment::*IntMethodWithNoParameter) ();
 int main(int argc, char* argv[]) {
 	double t1, t2;
 	int messageSize = 1;
-	int numOfPasses = 1;
+	int numOfPasses = 10;
 	MPI_Init(&argc, &argv);
 	Experiment exper = Experiment(messageSize, numOfPasses);
 	
@@ -132,8 +125,8 @@ int main(int argc, char* argv[]) {
 	// message size and execution time
 
 
-	for (int messageSize = 1; messageSize < 3; messageSize++) {
-		for (int i = 0; i < 2; i++) {
+	for (int messageSize = 1; messageSize < 2; messageSize++) {
+		for (int i = 0; i < 1; i++) {
 			cout << "Send for message size " << messageSize << " time ";
 			exper.messageSize = messageSize;
 			t1 = MPI_Wtime();
