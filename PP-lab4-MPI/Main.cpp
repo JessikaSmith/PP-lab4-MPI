@@ -27,6 +27,8 @@ public:
 	void MessageExchangeBsend();
 	void MessageExchangeRsend();
 	void MessageExchangeNonBlocking();
+	void MessageExchangeSendRecvCombined();
+
 };
 
 Experiment::Experiment(int argc, char* argv[], int messageSize, int passNumber)
@@ -116,7 +118,41 @@ void Experiment::MessageExchangeRsend() {
 	cout << "Out of Rsend" << endl;
 }
 
+void Experiment::MessageExchangeNonBlocking() {
+	MPI_Request request;
+	char buffer1[MAX_LENGTH];
+	char buffer2[MAX_LENGTH];
+	int passes = 0;
+	for (int i = 0; i < messageSize; i++) buffer2[i] = 'i';
+	for (passes = 0; passes < passNumber; ++passes) {
+		if (procRank == 0) {
+			MPI_Isend(&buffer2, messageSize, MPI_CHAR, 1, 0, MPI_COMM_WORLD, &request);
+			MPI_Irecv(&buffer1, messageSize, MPI_CHAR, 1, MPI_ANY_TAG, MPI_COMM_WORLD, &request);
+		}
+		else {
+			MPI_Irecv(&buffer1, messageSize, MPI_CHAR, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &request);
+			MPI_Isend(&buffer2, messageSize, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &request);
+		}
+	}
+	cout << "Out of NonBlock" << endl;
+}
 
+void Experiment::MessageExchangeSendRecvCombined() {
+	MPI_Status status;
+	char buffer1[MAX_LENGTH];
+	char buffer2[MAX_LENGTH];
+	int passes = 0;
+	for (int i = 0; i < messageSize; i++) buffer2[i] = 'i';
+	for (passes = 0; passes < passNumber; ++passes) {
+		if (procRank == 0) {
+			MPI_Sendrecv(&buffer2, messageSize, MPI_CHAR, 1, 0, &buffer1, messageSize, MPI_CHAR, 1, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+		}
+		else {
+			MPI_Sendrecv(&buffer2, messageSize, MPI_CHAR, 0, 0, &buffer1, messageSize, MPI_CHAR, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+		}
+	}
+	cout << "Out of SendRecv" << endl;
+}
 
 typedef void(Experiment::*IntMethodWithNoParameter) ();
 
@@ -128,12 +164,12 @@ int main(int argc, char* argv[]) {
 	Experiment exper = Experiment(argc, argv,messageSize, numOfPasses);
 	
 	IntMethodWithNoParameter functions[] = {
-		//&Experiment::MessageExchangeSend,
-		//&Experiment::MessageExchangeSsend,
-		//&Experiment::MessageExchangeBsend,
+		&Experiment::MessageExchangeSend,
+		&Experiment::MessageExchangeSsend,
+		&Experiment::MessageExchangeBsend,
 		&Experiment::MessageExchangeRsend,
 		//&Experiment::MessageExchangeNonBlocking,
-		//&Experiment::MessageExchangeSendRecvCombined,
+		&Experiment::MessageExchangeSendRecvCombined,
 	};
 
 	// evaluating the dependence between 
