@@ -119,19 +119,24 @@ void Experiment::MessageExchangeRsend() {
 }
 
 void Experiment::MessageExchangeNonBlocking() {
-	MPI_Request request;
+	MPI_Request sendHandle, recvHandle;
+	MPI_Status status;
 	char buffer1[MAX_LENGTH];
 	char buffer2[MAX_LENGTH];
 	int passes = 0;
 	for (int i = 0; i < messageSize; i++) buffer2[i] = 'i';
 	for (passes = 0; passes < passNumber; ++passes) {
 		if (procRank == 0) {
-			MPI_Isend(&buffer2, messageSize, MPI_CHAR, 1, 0, MPI_COMM_WORLD, &request);
-			MPI_Irecv(&buffer1, messageSize, MPI_CHAR, 1, MPI_ANY_TAG, MPI_COMM_WORLD, &request);
+			MPI_Isend(&buffer2, messageSize, MPI_CHAR, 1, 0, MPI_COMM_WORLD, &sendHandle);
+			MPI_Irecv(&buffer1, messageSize, MPI_CHAR, 1, MPI_ANY_TAG, MPI_COMM_WORLD, &recvHandle);
+			MPI_Wait(&sendHandle, &status);
+			MPI_Wait(&recvHandle, &status);
 		}
 		else {
-			MPI_Irecv(&buffer1, messageSize, MPI_CHAR, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &request);
-			MPI_Isend(&buffer2, messageSize, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &request);
+			MPI_Irecv(&buffer1, messageSize, MPI_CHAR, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &recvHandle);
+			MPI_Isend(&buffer2, messageSize, MPI_CHAR, 0, 0, MPI_COMM_WORLD, &sendHandle);
+			MPI_Wait(&sendHandle, &status);
+			MPI_Wait(&recvHandle, &status);
 		}
 	}
 	cout << "Out of NonBlock" << endl;
@@ -168,7 +173,7 @@ int main(int argc, char* argv[]) {
 		&Experiment::MessageExchangeSsend,
 		&Experiment::MessageExchangeBsend,
 		&Experiment::MessageExchangeRsend,
-		//&Experiment::MessageExchangeNonBlocking,
+		&Experiment::MessageExchangeNonBlocking,
 		&Experiment::MessageExchangeSendRecvCombined,
 	};
 
