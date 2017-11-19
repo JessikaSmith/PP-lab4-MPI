@@ -6,6 +6,7 @@
 #include <math.h>
 #include <typeinfo>
 
+#define ERRORS_THROW_EXCEPTIONS
 #define MAX_LENGTH 50001
 
 #pragma runtime_checks( "", off ) 
@@ -182,7 +183,7 @@ int main(int argc, char* argv[]) {
 
 	for (int messageSize = 10; messageSize < 50000; messageSize*=2) {
 		exper.messageSize = messageSize;
-		for (int i = 0; i < 1; i++) {
+		for (int i = 0; i < 6; i++) {
 			cout << "Send for message size " << messageSize << " time ";
 			t1 = MPI_Wtime();
 			(exper.*functions[i])();
